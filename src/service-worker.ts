@@ -13,8 +13,13 @@ import { ExpirationPlugin } from 'workbox-expiration';
 import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { StaleWhileRevalidate } from 'workbox-strategies';
+import localDB from './utils/local-db';
+import { FeedItem } from './types';
+import Parser from 'rss-parser';
 
 declare const self: ServiceWorkerGlobalScope;
+
+let hasNotificationPermission = true;
 
 clientsClaim();
 
@@ -57,7 +62,8 @@ registerRoute(
 // precache, in this case same-origin .png requests like those from in public/
 registerRoute(
   // Add in any other file extensions or routing criteria as needed.
-  ({ url }) => url.origin === self.location.origin && url.pathname.endsWith('.png'),
+  ({ url }) =>
+    url.origin === self.location.origin && url.pathname.endsWith('.png'),
   // Customize this strategy as needed, e.g., by changing to CacheFirst.
   new StaleWhileRevalidate({
     cacheName: 'images',
@@ -77,4 +83,57 @@ self.addEventListener('message', (event) => {
   }
 });
 
+const showNotification = (items: string[]) => {
+  self.registration
+    .showNotification('Now podcasts added', {
+      body: items.join(', '),
+      tag: 'refresh-rss-feed',
+    })
+    .catch(() => {
+      hasNotificationPermission = false;
+    });
+};
+
+const getFeedsAndUpdateContent = async () => {
+  const updatedContents: string[] = ['asljhgdkahjsdg'];
+  const feeds: FeedItem[] = [];
+  await localDB('feeds').iterate((value: FeedItem, key) => {
+    feeds.push({ ...value, id: key });
+  });
+
+  let parser = new Parser();
+
+  for (const feed of feeds) {
+    try {
+      if (!feed.feedUrl) return;
+      const resp = await parser.parseURL(feed.feedUrl);
+      const { items } = resp;
+      const contents: FeedItem[] =
+        (await localDB('feedContent').getItem(feed.id)) || [];
+      if (
+        contents.length &&
+        contents?.[0]?.title !== items?.[0]?.title &&
+        feed.title
+      )
+        updatedContents.push(feed?.title);
+
+      await localDB('feedContent').setItem(feed.id, items?.slice(0, 50));
+    } catch (err) {
+      return;
+    }
+  }
+
+  if (updatedContents.length && hasNotificationPermission)
+    showNotification(updatedContents);
+};
+
+self.addEventListener('periodicsync', (event: any) => {
+  if (event.tag === 'refresh-rss-feeds') {
+    event.waitUntil(getFeedsAndUpdateContent());
+  }
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.waitUntil(self.clients.openWindow('/'));
+});
 // Any other custom service worker logic can go here.
