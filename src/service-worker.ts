@@ -83,57 +83,57 @@ self.addEventListener('message', (event) => {
   }
 });
 
-const showNotification = (items: string[]) => {
-  self.registration
-    .showNotification('New podcasts added', {
-      body: items.join(', '),
-      tag: 'refresh-rss-feed',
-    })
-    .catch(() => {
-      hasNotificationPermission = false;
-    });
-};
+// const showNotification = (items: string[]) => {
+//   self.registration
+//     .showNotification('New podcasts added', {
+//       body: items.join(', '),
+//       tag: 'refresh-rss-feed',
+//     })
+//     .catch(() => {
+//       hasNotificationPermission = false;
+//     });
+// };
 
-const getFeedsAndUpdateContent = async () => {
-  const updatedContents: string[] = [];
-  const feeds: FeedItem[] = [];
-  await localDB('feeds').iterate((value: FeedItem, key) => {
-    feeds.push({ ...value, id: key });
-  });
+// const getFeedsAndUpdateContent = async () => {
+//   const updatedContents: string[] = [];
+//   const feeds: FeedItem[] = [];
+//   await localDB('feeds').iterate((value: FeedItem, key) => {
+//     feeds.push({ ...value, id: key });
+//   });
 
-  let parser = new Parser();
+//   let parser = new Parser();
 
-  for (const feed of feeds) {
-    try {
-      if (!feed.feedUrl) return;
-      const resp = await parser.parseURL(feed.feedUrl);
-      const { items } = resp;
-      const contents: FeedItem[] =
-        (await localDB('feedContent').getItem(feed.id)) || [];
-      if (
-        contents.length &&
-        contents?.[0]?.title !== items?.[0]?.title &&
-        feed.title
-      )
-        updatedContents.push(feed?.title);
+//   for (const feed of feeds) {
+//     try {
+//       if (!feed.feedUrl) return;
+//       const resp = await parser.parseURL(feed.feedUrl);
+//       const { items } = resp;
+//       const contents: FeedItem[] =
+//         (await localDB('feedContent').getItem(feed.id)) || [];
+//       if (
+//         contents.length &&
+//         contents?.[0]?.title !== items?.[0]?.title &&
+//         feed.title
+//       )
+//         updatedContents.push(feed?.title);
 
-      await localDB('feedContent').setItem(feed.id, items?.slice(0, 50));
-    } catch (err) {
-      return;
-    }
-  }
+//       await localDB('feedContent').setItem(feed.id, items?.slice(0, 50));
+//     } catch (err) {
+//       return;
+//     }
+//   }
 
-  if (updatedContents.length && hasNotificationPermission)
-    showNotification(updatedContents);
-};
+//   if (updatedContents.length && hasNotificationPermission)
+//     showNotification(updatedContents);
+// };
 
-self.addEventListener('periodicsync', (event: any) => {
-  if (event.tag === 'refresh-rss-feeds') {
-    event.waitUntil(getFeedsAndUpdateContent());
-  }
-});
+// self.addEventListener('periodicsync', (event: any) => {
+//   if (event.tag === 'refresh-rss-feeds') {
+//     event.waitUntil(getFeedsAndUpdateContent());
+//   }
+// });
 
-self.addEventListener('notificationclick', (event) => {
-  event.waitUntil(self.clients.openWindow('/'));
-});
+// self.addEventListener('notificationclick', (event) => {
+//   event.waitUntil(self.clients.openWindow('/'));
+// });
 // Any other custom service worker logic can go here.
