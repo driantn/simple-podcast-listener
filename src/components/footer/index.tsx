@@ -9,6 +9,7 @@ import {
   FormControl,
   Media,
   Alert,
+  Container,
 } from 'react-bootstrap';
 import isValidUrl from '../../utils/url-validator';
 import localDB from '../../utils/local-db';
@@ -71,62 +72,60 @@ const Footer = () => {
   };
 
   return (
-    <>
-      <Navbar fixed="bottom">
-        <Button variant="outline-light" block onClick={onModalAction}>
-          Add
-        </Button>
-        <Modal show={show} onHide={onModalAction}>
-          <Modal.Header closeButton>
-            <Modal.Title>Add new feed</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <InputGroup className="mb-3">
-              <FormControl
-                placeholder="Paste rss feed url"
-                aria-label="rss feed"
-                aria-describedby="basic-addon2"
-                onChange={onUrlChange}
+    <Navbar fixed="bottom" style={{ maxWidth: '400px', margin: 'auto' }}>
+      <Button variant="outline-light" block onClick={onModalAction}>
+        Add
+      </Button>
+      <Modal show={show} onHide={onModalAction}>
+        <Modal.Header closeButton>
+          <Modal.Title>Add new feed</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <InputGroup className="mb-3">
+            <FormControl
+              placeholder="Paste rss feed url"
+              aria-label="rss feed"
+              aria-describedby="basic-addon2"
+              onChange={onUrlChange}
+            />
+            <InputGroup.Append>
+              <Button variant="outline-secondary" onClick={onLoad}>
+                Load
+              </Button>
+            </InputGroup.Append>
+          </InputGroup>
+          {error && <Alert variant="danger">Something went wrong.</Alert>}
+          {feed?.title && (
+            <Media>
+              <img
+                width={64}
+                height={64}
+                className="mr-3"
+                src={feed?.image?.url}
+                alt={feed?.title}
               />
-              <InputGroup.Append>
-                <Button variant="outline-secondary" onClick={onLoad}>
-                  Load
-                </Button>
-              </InputGroup.Append>
-            </InputGroup>
-            {error && <Alert variant="danger">Something went wrong.</Alert>}
-            {feed?.title && (
-              <Media>
-                <img
-                  width={64}
-                  height={64}
-                  className="mr-3"
-                  src={feed?.image?.url}
-                  alt={feed?.title}
-                />
-                <Media.Body>
-                  <InputGroup className="mb-3">
-                    <FormControl
-                      placeholder="Feed title"
-                      aria-label="rss feed"
-                      aria-describedby="basic-addon2"
-                      onChange={onTitleChange}
-                      value={feed?.title}
-                    />
-                  </InputGroup>
-                  <p>{feed?.description}</p>
-                </Media.Body>
-              </Media>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="primary" onClick={onSave}>
-              Save Feed
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      </Navbar>
-    </>
+              <Media.Body>
+                <InputGroup className="mb-3">
+                  <FormControl
+                    placeholder="Feed title"
+                    aria-label="rss feed"
+                    aria-describedby="basic-addon2"
+                    onChange={onTitleChange}
+                    value={feed?.title}
+                  />
+                </InputGroup>
+                <p>{feed?.description}</p>
+              </Media.Body>
+            </Media>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={onSave}>
+            Save Feed
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </Navbar>
   );
 };
 

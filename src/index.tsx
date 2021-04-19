@@ -24,19 +24,6 @@ const getNotificationPermission = () => {
 };
 getNotificationPermission();
 
-// const registerPeriodicFeedsCheck = async () => {
-//   const registration = await navigator.serviceWorker.ready;
-//   try {
-//     // @ts-ignore
-//     await registration.periodicSync.register('refresh-rss-feeds', {
-//       minInterval: 24 * 60 * 60 * 1000,
-//     });
-//   } catch {
-//     console.log('Periodic Sync could not be registered!');
-//   }
-// };
-
-// registerPeriodicFeedsCheck();
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
