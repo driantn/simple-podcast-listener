@@ -85,7 +85,7 @@ self.addEventListener('message', (event) => {
 
 const showNotification = (items: string[]) => {
   self.registration
-    .showNotification('Now podcasts added', {
+    .showNotification('New podcasts added', {
       body: items.join(', '),
       tag: 'refresh-rss-feed',
     })
@@ -95,7 +95,7 @@ const showNotification = (items: string[]) => {
 };
 
 const getFeedsAndUpdateContent = async () => {
-  const updatedContents: string[] = ['asljhgdkahjsdg'];
+  const updatedContents: string[] = [];
   const feeds: FeedItem[] = [];
   await localDB('feeds').iterate((value: FeedItem, key) => {
     feeds.push({ ...value, id: key });
