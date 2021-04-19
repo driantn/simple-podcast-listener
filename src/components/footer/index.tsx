@@ -9,7 +9,6 @@ import {
   FormControl,
   Media,
   Alert,
-  Container,
 } from 'react-bootstrap';
 import isValidUrl from '../../utils/url-validator';
 import localDB from '../../utils/local-db';
