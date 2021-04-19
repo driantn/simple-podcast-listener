@@ -54,7 +54,7 @@ const FeedListItem = ({ item }: Props) => {
           <Description>{description}</Description>
         </Media.Body>
         <Dropdown onClick={onDropDownClick}>
-          <Dropdown.Toggle variant="secondary" id="dropdown-basic" />
+          <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic" />
 
           <Dropdown.Menu>
             <Dropdown.Item onClick={onOpenFeed}>Open Feed</Dropdown.Item>
