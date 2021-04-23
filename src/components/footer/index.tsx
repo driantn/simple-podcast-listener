@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Parser from 'rss-parser';
 import { v4 as uuidv4 } from 'uuid';
+import { useLocation, useHistory } from 'react-router-dom';
 import {
   Button,
   Navbar,
@@ -15,6 +16,10 @@ import localDB from '../../utils/local-db';
 import { FeedItem } from '../../types';
 import useData from '../../store';
 
+const useQuery = () => {
+  return new URLSearchParams(useLocation().search);
+}
+
 const Footer = () => {
   const { dispatch } = useData();
   const [show, setShow] = useState(false);
@@ -25,6 +30,8 @@ const Footer = () => {
   const [feed, setFeed] = useState<FeedItem | null>(null);
   const [error, setError] = useState(false);
   const [urlValue, setUrlValue] = useState('');
+  const query: any = useQuery();
+  const history = useHistory();
 
   const onUrlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
@@ -68,6 +75,17 @@ const Footer = () => {
 
     setFeed({ id: uuidv4(), title, description, items, image, feedUrl, link });
   };
+
+  useEffect(() => {
+    if (query && query.get('quickAdd')) {
+      query.delete('quickAdd')
+      history.replace({
+        search: query.toString(),
+      })
+      onModalAction();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Navbar fixed="bottom" style={{ maxWidth: '400px', margin: 'auto' }}>

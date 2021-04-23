@@ -33,6 +33,15 @@
       "sizes": "512x512"
     }
   ],
+  "shortcuts": [
+    {
+      "name": "Add new feed",
+      "short_name": "Add new feed",
+      "description": "Quick way to add new feed",
+      "url": "/?quickAdd=pwa",
+      "icons": [{ "src": "/logo128.png", "sizes": "128x128" }]
+    }
+  ],
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#2c3e50",
