@@ -42,7 +42,7 @@
       "icons": [{ "src": "/logo128.png", "sizes": "128x128" }]
     }
   ],
-  "start_url": ".",
+  "start_url": "https://spl.onrender.com/",
   "display": "standalone",
   "theme_color": "#2c3e50",
   "background_color": "#2c3e50"
