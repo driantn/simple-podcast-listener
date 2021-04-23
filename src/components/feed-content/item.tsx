@@ -79,6 +79,7 @@ const ContentItem = ({ item }: Props) => {
         audioRef.current.title=item.title || '';
         audioRef.current.volume = 1;
       audioRef.current.play();
+      document.title = item.title || 'Simple Podcast Listener';
       audioRef.current.addEventListener('loadedmetadata', async () => {
         if (item.guid) {
           const feedStatus: FeedStatus | null = await localDB('feedProgress').getItem(item.guid);

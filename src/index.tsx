@@ -15,7 +15,16 @@ ReactDOM.render(
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://cra.link/PWA
-serviceWorkerRegistration.register();
+const config = {
+  onUpdate: (registration: ServiceWorkerRegistration) => {
+    const title = 'Simple Podcast Listener';
+    const options = {
+      body: 'Application was updated please close it and open it again'
+    };
+    registration.showNotification(title, options);
+  }
+}
+serviceWorkerRegistration.register(config);
 
 const getNotificationPermission = () => {
   try {
