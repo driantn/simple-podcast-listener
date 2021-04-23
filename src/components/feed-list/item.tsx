@@ -2,10 +2,10 @@ import React from 'react';
 import { Media, ListGroup, Dropdown } from 'react-bootstrap';
 import Parser from 'rss-parser';
 import { useHistory } from 'react-router-dom';
-import { FeedItem } from '../../../types';
+import { FeedItem } from '../../types';
 import Description from './styles';
-import localDB from '../../../utils/local-db';
-import useData from '../../../store';
+import localDB from '../../utils/local-db';
+import useData from '../../store';
 
 type Props = {
   item: FeedItem;

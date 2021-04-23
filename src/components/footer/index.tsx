@@ -38,7 +38,6 @@ const Footer = () => {
   };
 
   const onSave = async () => {
-    console.log('log', feed);
     const { items, id, ...rest } = feed as FeedItem;
     await localDB('feeds').setItem(id, { ...rest });
     await localDB('feedContent').setItem(id, items?.slice(0, 50));
@@ -66,7 +65,7 @@ const Footer = () => {
       feedUrl = urlValue,
       link = '',
     } = resp;
-    console.log('log', resp);
+
     setFeed({ id: uuidv4(), title, description, items, image, feedUrl, link });
   };
 

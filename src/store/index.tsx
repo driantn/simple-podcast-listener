@@ -45,7 +45,7 @@ export const DataProvider = ({ children }: any) => {
 const useData = () => {
   const contextValues = useContext(context);
   if (contextValues === undefined) {
-    throw new Error('useData must be used within a CountProvider');
+    throw new Error('useData must be used within DataProvider');
   }
   return contextValues;
 };
