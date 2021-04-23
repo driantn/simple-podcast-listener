@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { FeedItem } from '../../types';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ListGroup, Media, Button } from 'react-bootstrap';
+import { FeedItem, FeedStatus } from '../../types';
+import localDB from '../../utils/local-db';
 import Progress from './styles';
 
 type Props = {
@@ -40,15 +41,34 @@ const ContentItem = ({ item }: Props) => {
   const intervalRef = useRef<number>(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState<number | null>(null);
 
-  const startTimer = () => {
-    intervalRef.current = window.setInterval(() => {
-      const { duration, ended, currentTime } = audioRef.current;
+  const loadSavedProgress = useCallback(async () => {
+    if (!item.guid) return;
+    const status: FeedStatus | null = await localDB('feedProgress').getItem(item.guid);
+    if (!status) return;
+     const currentPercentage = (status.progress / status.duration) * 100;
+    setProgress(Number(currentPercentage.toFixed(2)));
+    setDuration(status.duration);
+  }, [item.guid]);
 
-      if (!ended) {
+  const formatDuration = (duration: number) => {
+   return new Date(duration * 1000).toISOString().substr(11, 8)
+  }
+
+  const updateProgress = async (updateDb: boolean = true) => {
+    const { duration, ended, currentTime } = audioRef.current;
+     if (!ended) {
         const currentPercentage = duration ? (currentTime / duration) * 100 : 0;
         setProgress(Number(currentPercentage.toFixed(2)));
+        if (item.guid && updateDb)
+        await localDB('feedProgress').setItem(item.guid, { progress: currentTime, duration });
       }
+  }
+
+  const startTimer = () => {
+    intervalRef.current = window.setInterval(async () => {
+      await updateProgress();
     }, 60 * 1000);
   };
 
@@ -56,8 +76,16 @@ const ContentItem = ({ item }: Props) => {
     if (!isPlaying) {
       if (!audioRef.current.src)
         audioRef.current.src = item.enclosure ? item.enclosure.url : '';
+        audioRef.current.title=item.title || '';
+        audioRef.current.volume = 1;
       audioRef.current.play();
-      audioRef.current.addEventListener('loadedmetadata', () => {
+      audioRef.current.addEventListener('loadedmetadata', async () => {
+        if (item.guid) {
+          const feedStatus: FeedStatus | null = await localDB('feedProgress').getItem(item.guid);
+          if (feedStatus) audioRef.current.currentTime = feedStatus.progress;
+          await updateProgress(false);
+        }
+        setDuration(audioRef.current.duration);
         startTimer();
       });
     } else {
@@ -70,11 +98,13 @@ const ContentItem = ({ item }: Props) => {
 
   useEffect(() => {
     const player = audioRef.current;
+    loadSavedProgress();
     return () => {
+      setIsPlaying(false);
       clearInterval(intervalRef.current);
       player.pause();
     };
-  }, []);
+  }, [loadSavedProgress]);
 
   return (
     <ListGroup.Item key={item.pubDate}>
@@ -85,7 +115,8 @@ const ContentItem = ({ item }: Props) => {
         </Button>
         <Media.Body>
           <h5>{item.title}</h5>
-          <p>{new Date(item.pubDate || '').toDateString()}</p>
+          <p className="mb-0">{new Date(item.pubDate || '').toDateString()}</p>
+          {duration && (<p className="mb-0 font-weight-bold">Duration: {formatDuration(duration)}</p>)}
         </Media.Body>
       </Media>
     </ListGroup.Item>
