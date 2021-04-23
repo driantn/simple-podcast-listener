@@ -5,13 +5,14 @@ import ContentItem from './item';
 
 type Props = {
   content: FeedItem[];
+  id: string;
 };
 
-const FeedContent = ({ content }: Props) => {
+const FeedContent = ({ content, id }: Props) => {
   return (
     <ListGroup>
       {content.map((item) => (
-        <ContentItem key={item.pubDate} item={item} />
+        <ContentItem feedId={id} key={item.pubDate} item={item} />
       ))}
     </ListGroup>
   );

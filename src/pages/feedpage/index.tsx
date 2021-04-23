@@ -15,7 +15,7 @@ const FeedPage = () => {
 
   return (
     <Container fluid="md">
-      <FeedContent content={state.feedContent} />
+      <FeedContent id={id} content={state.feedContent} />
     </Container>
   );
 };

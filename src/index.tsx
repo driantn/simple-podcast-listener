@@ -19,7 +19,9 @@ const config = {
   onUpdate: (registration: ServiceWorkerRegistration) => {
     const title = 'Simple Podcast Listener';
     const options = {
-      body: 'Application was updated please close it and open it again'
+      body: 'Application was updated please close it and open it again',
+      icon: "logo64.png",
+
     };
     registration.showNotification(title, options);
   }

@@ -6,6 +6,7 @@ import Progress from './styles';
 
 type Props = {
   item: FeedItem;
+  feedId: string;
 };
 
 const pause = (
@@ -36,12 +37,15 @@ const play = (
   </svg>
 );
 
-const ContentItem = ({ item }: Props) => {
+const ContentItem = ({ item, feedId }: Props) => {
   const audioRef = useRef(new Audio());
   const intervalRef = useRef<number>(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState<number | null>(null);
+
+  const hasMediaSession = "mediaSession" in navigator;
+
 
   const loadSavedProgress = useCallback(async () => {
     if (!item.guid) return;
@@ -72,6 +76,19 @@ const ContentItem = ({ item }: Props) => {
     }, 60 * 1000);
   };
 
+  const updateMediaSession = async () => {
+    if (!hasMediaSession) return;
+    const feed: FeedItem | null = await localDB('feeds').getItem(feedId);
+    // @ts-ignore
+    window.navigator.mediaSession.metadata = new MediaMetadata({
+    title: item.title,
+    artist: item.creator,
+    artwork: [
+      { src: feed ? feed?.image?.url : '/logo512.png', sizes: '512x512', type: 'image/png' },
+    ]
+  });
+  }
+
   const onClick = () => {
     if (!isPlaying) {
       if (!audioRef.current.src)
@@ -88,6 +105,7 @@ const ContentItem = ({ item }: Props) => {
         }
         setDuration(audioRef.current.duration);
         startTimer();
+        await updateMediaSession();
       });
     } else {
       clearInterval(intervalRef.current);
