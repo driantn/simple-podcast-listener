@@ -21,6 +21,9 @@ const StateReducer = (state: State, action: Action): State => {
     case 'addItem': {
       return { ...state, feeds: [...state.feeds, payload] };
     }
+     case 'removeItem': {
+      return { ...state, feeds: state.feeds.filter(item=> item.id !== payload.id) };
+    }
     case 'loadFeeds': {
       return { ...state, feeds: payload };
     }
