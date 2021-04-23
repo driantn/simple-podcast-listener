@@ -78,6 +78,11 @@ function registerValidSW(swUrl: string, config?: Config) {
                 'New content is available and will be used when all ' +
                   'tabs for this page are closed. See https://cra.link/PWA.'
               );
+              const title = 'Simple Podcast Listener';
+              const options = {
+                body: 'Aplication was updated please close it and open it again'
+              };
+              registration.showNotification(title, options);
 
               // Execute callback
               if (config && config.onUpdate) {

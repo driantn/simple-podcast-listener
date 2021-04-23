@@ -17,12 +17,12 @@ ReactDOM.render(
 // Learn more about service workers: https://cra.link/PWA
 serviceWorkerRegistration.register();
 
-// const getNotificationPermission = () => {
-//   try {
-//     Notification.requestPermission().then();
-//   } catch (e) {}
-// };
-// getNotificationPermission();
+const getNotificationPermission = () => {
+  try {
+    Notification.requestPermission().then();
+  } catch (e) {}
+};
+getNotificationPermission();
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
