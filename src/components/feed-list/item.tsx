@@ -5,7 +5,8 @@ import { useHistory } from 'react-router-dom';
 import { FeedItem } from '../../types';
 import Description from './styles';
 import localDB from '../../utils/local-db';
-import useData from '../../store';
+import useData, { REMOVE_ITEM } from '../../store';
+import { FEEDS, FEED_CONTENT } from '../../constants';
 
 type Props = {
   item: FeedItem;
@@ -13,7 +14,7 @@ type Props = {
 
 const FeedListItem = ({ item }: Props) => {
   const history = useHistory();
-   const { dispatch } = useData();
+  const { dispatch } = useData();
 
   if (!item) return null;
   const { id, title, description, image, link } = item;
@@ -32,20 +33,20 @@ const FeedListItem = ({ item }: Props) => {
   };
 
   const onReloadFeed = async () => {
-    const feed: FeedItem | null = await localDB('feeds').getItem(id);
+    const feed: FeedItem | null = await localDB(FEEDS).getItem(id);
     if (!feed?.feedUrl) return;
 
     const parser = new Parser();
     const feedContent = await parser.parseURL(feed.feedUrl);
     const { items } = feedContent;
-    await localDB('feedContent').setItem(id, items?.slice(0, 50));
+    await localDB(FEED_CONTENT).setItem(id, items?.slice(0, 50));
   };
 
   const onDelete = async () => {
-     await localDB('feeds').removeItem(id);
-     await localDB('feedContent').removeItem(id);
-     dispatch({ type: 'removeItem', payload: { id } });
-  }
+    await localDB(FEEDS).removeItem(id);
+    await localDB(FEED_CONTENT).removeItem(id);
+    dispatch({ type: REMOVE_ITEM, payload: { id } });
+  };
 
   return (
     <ListGroup.Item onClick={onClick}>
@@ -69,9 +70,7 @@ const FeedListItem = ({ item }: Props) => {
             <Dropdown.Item onClick={onReloadFeed}>
               Reload Feed Content
             </Dropdown.Item>
-             <Dropdown.Item onClick={onDelete}>
-              Delete item
-            </Dropdown.Item>
+            <Dropdown.Item onClick={onDelete}>Delete item</Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
       </Media>

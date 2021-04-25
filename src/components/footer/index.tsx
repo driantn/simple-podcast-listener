@@ -14,11 +14,12 @@ import {
 import isValidUrl from '../../utils/url-validator';
 import localDB from '../../utils/local-db';
 import { FeedItem } from '../../types';
-import useData from '../../store';
+import useData, { ADD_ITEM } from '../../store';
+import { FEEDS, FEED_CONTENT } from '../../constants';
 
 const useQuery = () => {
   return new URLSearchParams(useLocation().search);
-}
+};
 
 const Footer = () => {
   const { dispatch } = useData();
@@ -46,9 +47,9 @@ const Footer = () => {
 
   const onSave = async () => {
     const { items, id, ...rest } = feed as FeedItem;
-    await localDB('feeds').setItem(id, { ...rest });
-    await localDB('feedContent').setItem(id, items?.slice(0, 50));
-    dispatch({ type: 'addItem', payload: { id, ...rest } });
+    await localDB(FEEDS).setItem(id, { ...rest });
+    await localDB(FEED_CONTENT).setItem(id, items?.slice(0, 50));
+    dispatch({ type: ADD_ITEM, payload: { id, ...rest } });
     onModalAction();
   };
 
@@ -78,13 +79,13 @@ const Footer = () => {
 
   useEffect(() => {
     if (query && query.get('quickAdd')) {
-      query.delete('quickAdd')
+      query.delete('quickAdd');
       history.replace({
         search: query.toString(),
-      })
+      });
       onModalAction();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -136,7 +137,7 @@ const Footer = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={onSave}>
+          <Button variant="primary" onClick={onSave} disabled={!feed}>
             Save Feed
           </Button>
         </Modal.Footer>

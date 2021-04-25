@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ListGroup, Media, Button } from 'react-bootstrap';
 import { FeedItem, FeedStatus } from '../../types';
 import localDB from '../../utils/local-db';
+import { FEED_STATUS, FEEDS } from '../../constants';
 import Progress from './styles';
 
 type Props = {
@@ -41,101 +42,175 @@ const ContentItem = ({ item, feedId }: Props) => {
   const audioRef = useRef(new Audio());
   const intervalRef = useRef<number>(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [loaderProgress, setLoaderProgress] = useState(0);
   const [duration, setDuration] = useState<number | null>(null);
 
-  const hasMediaSession = "mediaSession" in navigator;
+  const hasMediaSession = 'mediaSession' in navigator;
 
+  const calculateProgress = (status: FeedStatus) =>
+    Number(((status.currentTime / status.duration) * 100).toFixed(2));
 
-  const loadSavedProgress = useCallback(async () => {
+  const loadSavedStatus = async () => {
     if (!item.guid) return;
-    const status: FeedStatus | null = await localDB('feedProgress').getItem(item.guid);
+    const status: FeedStatus | null = await localDB(FEED_STATUS).getItem(
+      item.guid
+    );
     if (!status) return;
-     const currentPercentage = (status.progress / status.duration) * 100;
-    setProgress(Number(currentPercentage.toFixed(2)));
+    setLoaderProgress(calculateProgress(status));
     setDuration(status.duration);
-  }, [item.guid]);
+  };
 
-  const formatDuration = (duration: number) => {
-   return new Date(duration * 1000).toISOString().substr(11, 8)
-  }
+  const formatDuration = (duration: number) =>
+    new Date(duration * 1000).toISOString().substr(11, 8);
+
+  const getPlayerData = () => {
+    const { duration, ended, currentTime } = audioRef.current;
+
+    return {
+      finished: duration === currentTime,
+      duration,
+      ended,
+      currentTime,
+      viewPercentage: calculateProgress({ currentTime, duration }),
+    };
+  };
+
+  const savePlayerStatus = async ({ currentTime, duration }: FeedStatus) => {
+    if (!item || !item.guid) return;
+    await localDB(FEED_STATUS).setItem(item.guid, {
+      currentTime,
+      duration,
+    });
+  };
 
   const updateProgress = async (updateDb: boolean = true) => {
-    const { duration, ended, currentTime } = audioRef.current;
-     if (!ended) {
-        const currentPercentage = duration ? (currentTime / duration) * 100 : 0;
-        setProgress(Number(currentPercentage.toFixed(2)));
-        if (item.guid && updateDb)
-        await localDB('feedProgress').setItem(item.guid, { progress: currentTime, duration });
-      }
-  }
+    const { ended, viewPercentage, currentTime, duration } = getPlayerData();
+    if (!ended) {
+      setLoaderProgress(viewPercentage);
+      if (updateDb) await savePlayerStatus({ currentTime, duration });
+    }
+  };
 
   const startTimer = () => {
     intervalRef.current = window.setInterval(async () => {
       await updateProgress();
-    }, 60 * 1000);
+    }, 5 * 1000);
   };
 
-  const updateMediaSession = async () => {
+  const initMediaSession = async () => {
     if (!hasMediaSession) return;
-    const feed: FeedItem | null = await localDB('feeds').getItem(feedId);
+    const feed: FeedItem | null = await localDB(FEEDS).getItem(feedId);
     // @ts-ignore
-    window.navigator.mediaSession.metadata = new MediaMetadata({
-    title: item.title,
-    artist: item.creator,
-    artwork: [
-      { src: feed ? feed?.image?.url : '/logo512.png', sizes: '512x512', type: 'image/png' },
-    ]
-  });
-  }
+    window.navigator.mediaSession.metadata = new window.MediaMetadata({
+      title: item.title,
+      artwork: [
+        {
+          src: feed ? feed?.image?.url : '/logo512.png',
+          sizes: '512x512',
+          type: 'image/png',
+        },
+      ],
+    });
+    // @ts-ignore
+    window.navigator.mediaSession.setActionHandler('stop', () => {
+      onPause();
+    });
+  };
 
-  const onClick = () => {
-    if (!isPlaying) {
-      if (!audioRef.current.src)
-        audioRef.current.src = item.enclosure ? item.enclosure.url : '';
-        audioRef.current.title=item.title || '';
-        audioRef.current.volume = 1;
-      audioRef.current.play();
-      document.title = item.title || 'Simple Podcast Listener';
-      audioRef.current.addEventListener('loadedmetadata', async () => {
-        if (item.guid) {
-          const feedStatus: FeedStatus | null = await localDB('feedProgress').getItem(item.guid);
-          if (feedStatus) audioRef.current.currentTime = feedStatus.progress;
-          await updateProgress(false);
-        }
-        setDuration(audioRef.current.duration);
-        startTimer();
-        await updateMediaSession();
-      });
+  const onStart = () => {
+    const { finished } = getPlayerData();
+    const player = audioRef.current;
+    (window as any).myPlayer = player;
+    if (player.paused) {
+      if (!player.src) player.src = item.enclosure ? item.enclosure.url : '';
+      if (finished) player.currentTime = 0;
+      player.volume = 1;
+      player.play();
     } else {
-      clearInterval(intervalRef.current);
-      audioRef.current.pause();
+      player.pause();
     }
+  };
 
-    setIsPlaying(!isPlaying);
+  const onEnded = async () => {
+    const { currentTime, duration } = getPlayerData();
+    await savePlayerStatus({ currentTime, duration });
+  };
+
+  const onLoadMetaData = async () => {
+    const player = audioRef.current;
+    if (item.guid) {
+      const feedStatus: FeedStatus | null = await localDB(FEED_STATUS).getItem(
+        item.guid
+      );
+      if (feedStatus)
+        player.currentTime =
+          feedStatus.currentTime === feedStatus.duration
+            ? 0
+            : feedStatus.currentTime;
+      await updateProgress(false);
+    }
+    setDuration(player.duration);
+    await initMediaSession();
+  };
+
+  const onPlay = () => {
+    startTimer();
+    setIsPlaying(true);
+  };
+
+  const onPause = () => {
+    clearInterval(intervalRef.current);
+    setIsPlaying(false);
+  };
+
+  const addEventListeners = () => {
+    if (!audioRef.current) return;
+    const player = audioRef.current;
+
+    player.addEventListener('ended', onEnded);
+    player.addEventListener('loadedmetadata', onLoadMetaData);
+    player.addEventListener('play', onPlay);
+    player.addEventListener('pause', onPause);
+  };
+
+  const removeEventListeners = () => {
+    if (!audioRef.current) return;
+    const player = audioRef.current;
+
+    player.removeEventListener('ended', onEnded);
+    player.removeEventListener('loadedmetadata', onLoadMetaData);
+    player.addEventListener('play', onPlay);
+    player.addEventListener('pause', onPause);
   };
 
   useEffect(() => {
     const player = audioRef.current;
-    loadSavedProgress();
+    loadSavedStatus();
+    addEventListeners();
     return () => {
+      removeEventListeners();
       setIsPlaying(false);
       clearInterval(intervalRef.current);
       player.pause();
     };
-  }, [loadSavedProgress]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <ListGroup.Item key={item.pubDate}>
-      <Progress progress={progress} />
+      <Progress progress={loaderProgress} />
       <Media className="position-relative">
-        <Button className="m-2" variant="secondary" onClick={onClick}>
+        <Button className="m-2" variant="secondary" onClick={onStart}>
           {!isPlaying ? play : pause}
         </Button>
         <Media.Body>
           <h5>{item.title}</h5>
           <p className="mb-0">{new Date(item.pubDate || '').toDateString()}</p>
-          {duration && (<p className="mb-0 font-weight-bold">Duration: {formatDuration(duration)}</p>)}
+          {duration && (
+            <p className="mb-0 font-weight-bold">
+              Duration: {formatDuration(duration)}
+            </p>
+          )}
         </Media.Body>
       </Media>
     </ListGroup.Item>
