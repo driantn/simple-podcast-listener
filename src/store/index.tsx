@@ -1,10 +1,10 @@
 import React, { useContext } from 'react';
 import localDB from '../utils/local-db';
-import { FeedItem } from '../types';
+import { FeedItem, SavedFeedItem } from '../types';
 import { FEEDS, FEED_CONTENT } from '../constants';
 
 type Action = { type: string; payload?: any } | any;
-type State = { feeds: FeedItem[]; feedContent: FeedItem[] };
+type State = { feeds: FeedItem[]; feedContent: SavedFeedItem[] };
 type Dispatch = (action: Action) => void;
 
 export const ADD_ITEM = 'addItem';

@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ListGroup, Media, Button } from 'react-bootstrap';
-import { FeedItem, FeedStatus } from '../../types';
+import { SavedFeedItem, FeedItem, FeedStatus } from '../../types';
 import localDB from '../../utils/local-db';
-import { FEED_STATUS, FEEDS } from '../../constants';
+import { FEED_STATUS, FEEDS, UPDATE_INTERVAL } from '../../constants';
 import Progress from './styles';
 
 type Props = {
-  item: FeedItem;
+  item: SavedFeedItem;
   feedId: string;
 };
 
@@ -51,9 +51,9 @@ const ContentItem = ({ item, feedId }: Props) => {
     Number(((status.currentTime / status.duration) * 100).toFixed(2));
 
   const loadSavedStatus = async () => {
-    if (!item.guid) return;
+    if (!item.id) return;
     const status: FeedStatus | null = await localDB(FEED_STATUS).getItem(
-      item.guid
+      item.id
     );
     if (!status) return;
     setLoaderProgress(calculateProgress(status));
@@ -76,8 +76,8 @@ const ContentItem = ({ item, feedId }: Props) => {
   };
 
   const savePlayerStatus = async ({ currentTime, duration }: FeedStatus) => {
-    if (!item || !item.guid) return;
-    await localDB(FEED_STATUS).setItem(item.guid, {
+    if (!item) return;
+    await localDB(FEED_STATUS).setItem(item.id, {
       currentTime,
       duration,
     });
@@ -94,7 +94,7 @@ const ContentItem = ({ item, feedId }: Props) => {
   const startTimer = () => {
     intervalRef.current = window.setInterval(async () => {
       await updateProgress();
-    }, 5 * 1000);
+    }, UPDATE_INTERVAL);
   };
 
   const initMediaSession = async () => {
@@ -120,9 +120,9 @@ const ContentItem = ({ item, feedId }: Props) => {
   const onStart = () => {
     const { finished } = getPlayerData();
     const player = audioRef.current;
-    (window as any).myPlayer = player;
+
     if (player.paused) {
-      if (!player.src) player.src = item.enclosure ? item.enclosure.url : '';
+      if (!player.src && item.mediaUrl) player.src = item.mediaUrl;
       if (finished) player.currentTime = 0;
       player.volume = 1;
       player.play();
@@ -138,17 +138,16 @@ const ContentItem = ({ item, feedId }: Props) => {
 
   const onLoadMetaData = async () => {
     const player = audioRef.current;
-    if (item.guid) {
-      const feedStatus: FeedStatus | null = await localDB(FEED_STATUS).getItem(
-        item.guid
-      );
-      if (feedStatus)
-        player.currentTime =
-          feedStatus.currentTime === feedStatus.duration
-            ? 0
-            : feedStatus.currentTime;
-      await updateProgress(false);
-    }
+    const feedStatus: FeedStatus | null = await localDB(FEED_STATUS).getItem(
+      item.id
+    );
+    if (feedStatus)
+      player.currentTime =
+        feedStatus.currentTime === feedStatus.duration
+          ? 0
+          : feedStatus.currentTime;
+
+    await updateProgress(false);
     setDuration(player.duration);
     await initMediaSession();
   };
@@ -205,7 +204,7 @@ const ContentItem = ({ item, feedId }: Props) => {
         </Button>
         <Media.Body>
           <h5>{item.title}</h5>
-          <p className="mb-0">{new Date(item.pubDate || '').toDateString()}</p>
+          <p className="mb-0">{new Date(item.pubDate).toDateString()}</p>
           {duration && (
             <p className="mb-0 font-weight-bold">
               Duration: {formatDuration(duration)}

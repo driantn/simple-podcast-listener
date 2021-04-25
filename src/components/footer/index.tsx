@@ -48,7 +48,13 @@ const Footer = () => {
   const onSave = async () => {
     const { items, id, ...rest } = feed as FeedItem;
     await localDB(FEEDS).setItem(id, { ...rest });
-    await localDB(FEED_CONTENT).setItem(id, items?.slice(0, 50));
+    const cleanItems = items?.slice(0, 50).map((item) => ({
+      id: item.guid || uuidv4(),
+      title: item.title,
+      mediaUrl: item.enclosure.url || '',
+      pubDate: item.pubDate || '',
+    }));
+    await localDB(FEED_CONTENT).setItem(id, cleanItems);
     dispatch({ type: ADD_ITEM, payload: { id, ...rest } });
     onModalAction();
   };

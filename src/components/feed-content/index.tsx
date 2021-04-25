@@ -1,10 +1,10 @@
 import React from 'react';
-import { FeedItem } from '../../types';
+import { SavedFeedItem } from '../../types';
 import { ListGroup } from 'react-bootstrap';
 import ContentItem from './item';
 
 type Props = {
-  content: FeedItem[];
+  content: SavedFeedItem[];
   id: string;
 };
 
@@ -12,7 +12,7 @@ const FeedContent = ({ content, id }: Props) => {
   return (
     <ListGroup>
       {content.map((item) => (
-        <ContentItem feedId={id} key={item.pubDate} item={item} />
+        <ContentItem feedId={id} key={item.id} item={item} />
       ))}
     </ListGroup>
   );
