@@ -20,12 +20,11 @@ const config = {
     const title = 'Simple Podcast Listener';
     const options = {
       body: 'Application was updated please close it and open it again',
-      icon: "logo64.png",
-
+      icon: 'https://spl.onrender.com/logo64.png',
     };
     registration.showNotification(title, options);
-  }
-}
+  },
+};
 serviceWorkerRegistration.register(config);
 
 const getNotificationPermission = () => {
