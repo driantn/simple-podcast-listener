@@ -1,6 +1,7 @@
 import React from 'react';
 import { Media, ListGroup, Dropdown } from 'react-bootstrap';
 import Parser from 'rss-parser';
+import { v4 as uuidv4 } from 'uuid';
 import { useHistory } from 'react-router-dom';
 import { FeedItem } from '../../types';
 import Description from './styles';
@@ -38,8 +39,14 @@ const FeedListItem = ({ item }: Props) => {
 
     const parser = new Parser();
     const feedContent = await parser.parseURL(feed.feedUrl);
-    const { items } = feedContent;
-    await localDB(FEED_CONTENT).setItem(id, items?.slice(0, 50));
+    const { items = [] } = feedContent;
+    const cleanItems = items?.slice(0, 50).map((item) => ({
+      id: item.guid || uuidv4(),
+      title: item.title,
+      mediaUrl: item?.enclosure?.url || '',
+      pubDate: item.pubDate || '',
+    }));
+    await localDB(FEED_CONTENT).setItem(id, cleanItems);
   };
 
   const onDelete = async () => {
